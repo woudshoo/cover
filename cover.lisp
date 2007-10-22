@@ -30,29 +30,34 @@
    (previous-column :accessor previous-column)
    (next-row :accessor next-row)
    (previous-row :accessor previous-row)
-   (column-header :accessor column-header)))
+   (column-header :accessor column-header))
+  (:documentation "Cell in matrix, conaining links to cells to its four existing neighbours and a link up to the columns"))
 
 (defclass header (cell)
-  ((name :accessor name)))
+  ((name :accessor name))
+  (:documentation "Generic header cell for the problem matrix."))
 
 (defclass row-header (header)
   ((extra-data :accessor extra-data)))
   
 (defclass column-header (header)
-  ((nr-rows :accessor nr-rows)))
+  ((nr-rows :accessor nr-rows :initform 0)))
 
 (defclass problem (cell) 
-  ((min-nr-rows :accessor min-nr-rows)))
+  ((min-nr-rows :accessor min-nr-rows :initform 9999)))   ;; this is bad, using arbitrary number!!
 
 (define-condition cell-is-not-in-column (error) ())
 (define-condition cell-is-not-in-row (error) ())
 (define-condition cant-find-row () ())
 (define-condition cant-find-column () ())
 
-(defgeneric initialize (thing) (:documentation "Initializes basic slot values"))
+(defgeneric initialize (thing) 
+  (:documentation 
+   "Initializes basic slot values, this method should go away but use default values instead 
+or use the after method."))
 (defgeneric add-row (problem row-name extra-data)  (:documentation "Add an empty row to the problem"))
 (defgeneric add-column (problem column-name) (:documentation "Add an empty column to the problem"))
-(defgeneric add-cell (problem row col))
+(defgeneric add-cell (problem row col) (:documentation "Adds a cell to the matrix.  This should update the column count!"))
 (defgeneric find-column (start-point column-name) (:documentation "Try to find a column starting at start-point"))
 (defgeneric find-row (start-point column-name) (:documentation "Try to find a row starting at start-point"))
 (defgeneric row (cell) (:documentation "Find the row of the argument"))
@@ -144,6 +149,8 @@ It is not checked if a column with col-name already exists."
 
 (defmethod add-cell ((problem problem) (row row-header) (col column-header))
   (let ((new-cell (make-instance 'cell)))
+    (setf (column-header new-cell) col)
+    (incf (nr-rows col))
     (insert-cell-horizontally-after new-cell row)
     (insert-cell-vertically-after new-cell col)
     new-cell))
@@ -186,7 +193,9 @@ and the result will be an ill-posed problem."
 (defun reinsert-row (problem row)
   (declare (ignore problem))
   (do-linked-list-not-first cell row previous-column
-    (reinsert-vertically cell))
+    (reinsert-vertically cell)
+    (unless (typep cell 'row-header)
+      (incf (nr-rows (column-header cell)))))
   row)
 
 (defmethod remove-row ((problem problem) (row cell))
@@ -197,6 +206,8 @@ operation can be undone by calling reinsert-row with
 the same argument `row'."
   (declare (ignore problem))
   (do-linked-list-not-first cell row next-column
+    (unless (typep cell 'row-header)
+      (decf (nr-rows (column-header cell))))
     (remove-vertically cell))
   row)
 
@@ -266,11 +277,28 @@ still has all the links intact to the rows that are removed.
 (defun first-available-column (p)
   (next-column p))
 
+(defun minimum-column-available (p)
+  (let ((min 9999)
+	(result nil))
+    (do-linked-list-not-first col p next-column
+      (when (< (nr-rows col) min)
+	(setf min (nr-rows col))
+	(setf result col)
+	(when (= min 1) (return-from minimum-column-available result))
+	(when (= min 0) (signal 'cant-find-column))))
+    result))
+    
+
 (defun no-rows-p (p)
   (eq p (next-row p)))
 
 (defun no-solution-possible-p (p)
-  (no-rows-p p))
+  (when (no-rows-p p) (return-from no-solution-possible-p t))
+  (do-linked-list-not-first col p next-column
+    (when (= (nr-rows col) 0)
+      (return-from no-solution-possible-p t)))
+  nil)
+    
 ;;
 
 (defun find-or-insert-column (problem col-name)
@@ -310,16 +338,17 @@ still has all the links intact to the rows that are removed.
 	 (funcall solution-printer solution-so-far))
        (when (> (length solutions) max-nr-of-solutions)
 	 (return-from cover solutions)))
-      ((no-solution-possible-p p)) ; continue
+      ((no-solution-possible-p p) )
+;       (when solution-printer (funcall solution-printer solution-so-far))) ; continue
       (t 
        (setf solutions (cover p :solution-so-far solution-so-far 
 			      :column-selection column-selection
 			      :max-nr-of-solutions max-nr-of-solutions
 			      :solution-printer solution-printer
-			      :solutions solutions))
-       (when (> (length solutions) max-nr-of-solutions)
-	 (return-from cover solutions))))
-    (unplace-row p (pop solution-so-far)))
+			      :solutions solutions))))
+    (unplace-row p (pop solution-so-far))
+    (when (> (length solutions) max-nr-of-solutions)
+      (return-from cover solutions)))
   solutions)
   
 ;(defun cover (problem &optional (result-list (list)))

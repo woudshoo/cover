@@ -4,7 +4,8 @@
 (in-package :puzzel)
 
 ;;;
-;;;
+;;; 
+;;; Lots of Infuriating and Silly Parenthesis
 ;;; PUZZLE PIECES
 
 ;;;   #####
@@ -293,6 +294,58 @@
   (find-if (lambda (piece) (contains-point piece (list x y))) list-of-pieces))
 
 
+;;; Laying out of solution.
+;;; the following type of printable positions exist:
+;;;
+;;;        ABBBBa
+;;;        Cssssc
+;;;        Cssssc
+;;;        abbbba
+;;;
+;;;  a - corner piece
+;;;  b - horizontal connection
+;;;  s - space filler
+;;;
+;;; Drawing happens in alternate rows of ababababa
+;;; and                                  cscscscsc
+;;;
+;;; 
+(defun get-type-b-char (x y pieces)
+  (if (eq (piece-containing x y pieces)
+	  (piece-containing x (1- y) pieces))
+      #\IDEOGRAPHIC_SPACE
+      #\BOX_DRAWINGS_HEAVY_HORIZONTAL))
+
+(defun get-type-c-char (x y pieces)
+  (if (eq (piece-containing x y pieces)
+	  (piece-containing (1- x) y pieces))
+      #\IDEOGRAPHIC_SPACE
+      #\BOX_DRAWINGS_HEAVY_VERTICAL))
+
+(defun get-type-a-char (x y pieces)
+  (let ((up (not (eq (piece-containing x (1- y) pieces)
+		     (piece-containing (1- x) (1- y) pieces))))
+	(down (not (eq (piece-containing x y pieces)
+		       (piece-containing (1- x) y pieces))))
+	(left (not (eq (piece-containing (1- x) (1- y) pieces)
+		       (piece-containing (1- x) y pieces))))
+	(right (not (eq (piece-containing x (1- y) pieces)
+			(piece-containing x y pieces)))))
+    (cond
+      ((and up down left right) #\BOX_DRAWINGS_HEAVY_VERTICAL_AND_HORIZONTAL)
+      ((and up down left) #\BOX_DRAWINGS_HEAVY_VERTICAL_AND_LEFT)
+      ((and up down right) #\BOX_DRAWINGS_HEAVY_VERTICAL_AND_RIGHT)
+      ((and up left right) #\BOX_DRAWINGS_HEAVY_UP_AND_HORIZONTAL)
+      ((and down left right) #\BOX_DRAWINGS_HEAVY_DOWN_AND_HORIZONTAL)
+      ((and up down) #\BOX_DRAWINGS_HEAVY_VERTICAL)
+      ((and up left) #\BOX_DRAWINGS_HEAVY_UP_AND_LEFT)
+      ((and up right) #\BOX_DRAWINGS_HEAVY_UP_AND_RIGHT)
+      ((and down left) #\BOX_DRAWINGS_HEAVY_DOWN_AND_LEFT)
+      ((and down right) #\BOX_DRAWINGS_HEAVY_DOWN_AND_RIGHT)
+      ((and left right) #\BOX_DRAWINGS_HEAVY_HORIZONTAL)
+      (t #\IDEOGRAPHIC_SPACE))))
+	  
+
 (defun print-solution (vect)
   (let* ((list-of-pieces (pieces-from-solution vect))
 	 (start-x (min-x list-of-pieces))
@@ -304,19 +357,17 @@
 	 (loop for x from start-x upto (1+ end-x)
 	    do
 	      ;; print top row of piece
-	      (format t 
-		      (if (eq (piece-containing x y list-of-pieces) 
-			      (piece-containing x (1- y) list-of-pieces))
-			  "   " "---")))
+	      (format t "~A~A" 
+		      (get-type-a-char x y list-of-pieces)
+		      (get-type-b-char x y list-of-pieces)))
 	 (format t "~%")
 	 (loop for x from start-x upto (1+ end-x)
 	    do
-	      (format t
-		      (if (eq (piece-containing x y list-of-pieces)
-			      (piece-containing (1- x) y list-of-pieces))
-			  "   " "|  ")))
-	      (format t "~%")
-	      ;; print left hand side of piece
+	      (format t "~A~A"
+		      (get-type-c-char x y list-of-pieces)
+		      #\IDEOGRAPHIC_SPACE))
+	 (format t "~%")
+       ;; print left hand side of piece
 	 )))
 	      
 
@@ -358,7 +409,7 @@
 (defvar W-piece (create-piece-with-name "W" "#" "##" " ##"))
 (defvar X-piece (create-piece-with-name "X" " #" "###" " #"))
 (defvar Y-piece (create-piece-with-name "Y" "#" "##" "#" "#"))
-(defvar Z-piece (create-piece-with-name "Z" " #" "##" " #" " ##"))
+(defvar Z-piece (create-piece-with-name "Z" "##" " #" " ##"))
 
 
 (defun create-pentomino-puzel (length)
@@ -389,7 +440,7 @@
 (setq W-piece (create-piece-with-name "W" "#" "##" " ##"))
 (setq X-piece (create-piece-with-name "X" " #" "###" " #"))
 (setq Y-piece (create-piece-with-name "Y" "#" "##" "#" "#"))
-(setq Z-piece (create-piece-with-name "Z" " #" "##" " #" " ##"))
+(setq Z-piece (create-piece-with-name "Z" "##" " #" " ##"))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -398,3 +449,12 @@
 ;  (let ((puzzel (cover:create-problem))
 ;	(board  (make-instance 'board :width :height)))
 
+;;
+;;
+;;            A N N A        
+;;    ###    #   #
+;;    ###    ### #
+;;    ###    # ###
+;;    # #    #   #
+;;
+;;    12      12
