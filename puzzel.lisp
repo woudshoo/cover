@@ -1,11 +1,8 @@
 (defpackage #:puzzel
   (:use #:cl #:cover))
-  
-(in-package :puzzel)
 
+(in-package :puzzel)
 ;;;
-;;; 
-;;; Lots of Infuriating and Silly Parenthesis
 ;;; PUZZLE PIECES
 
 ;;;   #####
@@ -24,10 +21,10 @@
 ;;;    #
 ;;;   ###
 ;;;
-;;;   ##      ###    
+;;;   ##      ###
 ;;;   ###     ##
 ;;;
-;;;   
+;;;
 ;;;   # #
 ;;;   ###
 ;;;
@@ -39,7 +36,7 @@
 ;;;  ###     ###
 ;;;    #     #
 ;;;
-;;;    #  
+;;;    #
 ;;;   ###
 ;;;    #
 ;;;
@@ -51,14 +48,10 @@
 ;;;
 ;;; Total:  16  stukjes, 80 plaatsen in 8x10?
 ;;;
-;;; 
+;;;
 ;;;
 ;;; syntax:
-;;;
-;;;  (create-bord 8 10)
-;;;
-;;;  (add-piece "
-;;;  
+
 
 (defclass board ()
   ((width :accessor width :initarg :width)
@@ -67,11 +60,11 @@
 (defclass point ()
   ((x :accessor x :initarg :x)
    (y :accessor y :initarg :y)))
-  
+
 (defclass piece ()
   ((name :accessor name :initarg :name)
    (squares :accessor squares :initarg :squares)))
-  
+
 (defgeneric name (obj))
 (defgeneric width (obj))
 (defgeneric height (obj))
@@ -98,6 +91,7 @@
   (loop for obj in list
        maximize (max-x obj) into max-x
        finally (return max-x)))
+
 (defmethod min-x ((list list))
   (loop for obj in list
        minimize (min-x obj) into min-x
@@ -137,9 +131,9 @@
 
 (defmethod height ((piece piece))
   (loop for point in (squares piece)
-       maximize (y point) into max-y
-       minimize (y point) into min-y
-       finally (return (1+ (- max-y min-y)))))
+     maximize (y point) into max-y
+     minimize (y point) into min-y
+     finally (return (1+ (- max-y min-y)))))
 
 (defmethod translate ((point point) (vect point))
   (make-instance 'point 
@@ -158,10 +152,10 @@
 
 (defmethod upper-left ((piece piece))
   (loop for point in (squares piece)
-       minimize (x point) into min-x
-       minimize (y point) into min-y
-       finally (return (make-instance 'point :x min-x :y min-y))))
-  
+     minimize (x point) into min-x
+     minimize (y point) into min-y
+     finally (return (make-instance 'point :x min-x :y min-y))))
+
 
 (defmethod contains-point ((point-a point) (point-b point))
   (and (= (x point-a) (x point-b)) (= (y point-a) (y point-b))))
@@ -226,13 +220,13 @@
 		 :squares (mapcar #'(lambda (x) (transform x transform-matrix)) (squares piece))))
 
 (defun all-rotations-and-mirrors-for-piece (piece)
-  (let ((pieces 
+  (let ((pieces
 	 (mapcar #'(lambda (transform) (transform piece transform)) 
 		 '((1 0 0 1)  ;; identit
 		   (0 1 -1 0)  ;; rotation 90 clockwise
 		   (0 -1 1 0) ;; rotation 90 counter clockwise
 		   (-1 0 0 -1) ;; roation 180 degrees
-		   
+
 		   (-1 0 0 1) ;; flip horizontal axis  
 		   (1 0 0 -1) ;; flip vertical axis
 		   (0 -1 -1 0) ;; 
@@ -301,7 +295,7 @@
 ;;;        Cssssc
 ;;;        Cssssc
 ;;;        abbbba
-;;;
+;;; 
 ;;;  a - corner piece
 ;;;  b - horizontal connection
 ;;;  s - space filler
@@ -344,7 +338,7 @@
       ((and down right) #\BOX_DRAWINGS_HEAVY_DOWN_AND_RIGHT)
       ((and left right) #\BOX_DRAWINGS_HEAVY_HORIZONTAL)
       (t #\IDEOGRAPHIC_SPACE))))
-	  
+
 
 (defun print-solution (vect)
   (let* ((list-of-pieces (pieces-from-solution vect))
@@ -357,7 +351,7 @@
 	 (loop for x from start-x upto (1+ end-x)
 	    do
 	      ;; print top row of piece
-	      (format t "~A~A" 
+	      (format t "~A~A"
 		      (get-type-a-char x y list-of-pieces)
 		      (get-type-b-char x y list-of-pieces)))
 	 (format t "~%")
@@ -369,11 +363,9 @@
 	 (format t "~%")
        ;; print left hand side of piece
 	 )))
-	      
-
-    
 
 (defun create-test-puzzel ()
+  "Creates a very simple test puzzel."
   (let ((puzzel (cover:create-problem))
 	(u-piece       (create-piece-with-name "U"
 			      "#.#"
@@ -382,8 +374,8 @@
 					       "###"
 					       ".#."
 					       ".#."))
-	(l-piece       (create-piece-with-name "L" 
-					       "##" 
+	(l-piece       (create-piece-with-name "L"
+					       "##"
 					       "#."))
 	(p-piece       (create-piece-with-name "P" "#"))
 	(I-piece       (create-piece-with-name "I" "###"))
@@ -393,7 +385,7 @@
     (add-piece-for-board puzzel p-piece board)
     (add-piece-for-board puzzel I-piece board)
     puzzel))
-    
+
 
 
 ;; Pentomino pieces
@@ -416,7 +408,13 @@
   (let ((puzzel (cover:create-problem))
 	(board (make-instance 'board :width length :height (/ 60 length))))
     (add-piece-for-board puzzel F-piece board)
-    (add-piece-for-board puzzel I-piece board)
+;    (add-piece-for-board puzzel I-piece board)
+;; add I piece, not rotated and not bordering at side of board
+    (loop for x from 0 upto (- (width board) (width I-piece))
+	 do
+	 (loop for y from 1 upto (1- (- (height board) (height I-piece)))
+	    do
+	      (add-piece puzzel (translate I-piece (list x y)) 0)))
     (add-piece-for-board puzzel L-piece board)
     (add-piece-for-board puzzel N-piece board)
     (add-piece-for-board puzzel P-piece board)
@@ -451,10 +449,11 @@
 
 ;;
 ;;
-;;            A N N A        
+;;            A N N A
 ;;    ###    #   #
 ;;    ###    ### #
 ;;    ###    # ###
 ;;    # #    #   #
 ;;
 ;;    12      12
+;; my piece is also highlighted
