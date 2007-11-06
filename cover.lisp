@@ -4,6 +4,8 @@
   (:export #:cover
 	   #:problem
 	   #:cell
+	   #:row
+	   #:extra-data
 	   #:add-row
 	   #:add-column
 	   #:add-cell
@@ -73,7 +75,6 @@ The nr-rows property keep track of the number of rows intersecting this column."
 (defgeneric add-cell (problem row col) (:documentation "Adds a cell to the matrix.  This should update the column count!"))
 (defgeneric find-column (start-point column-name) (:documentation "Try to find a column starting at start-point"))
 (defgeneric find-row (start-point column-name) (:documentation "Try to find a row starting at start-point"))
-;(defgeneric remove-column (problem col) (:documentation "Remove column from problem"))
 (defgeneric remove-row (problem col) (:documentation "Remove row from problem"))
 
 (defmethod initialize-instance :after ((cell cell) &rest ignored)
@@ -81,8 +82,7 @@ The nr-rows property keep track of the number of rows intersecting this column."
   (setf (next-column cell) cell)
   (setf (previous-column cell) cell)
   (setf (previous-row cell) cell)
-  (setf (next-row cell) cell)
-  (setf (column-header cell) nil))
+  (setf (next-row cell) cell))
 
 (defmacro insert-after-double-linked-list (new-cell old-cell next-cell previous-cell)
   "Insert new element in double linked list.
@@ -209,30 +209,12 @@ Used for printing the matrix."
   (let ((row (find-row problem row-name)))
     (unless row (return-from find-cell nil))
     (do-linked-list-not-first cell row next-column
-      (when (string= (column-header cell) col-name) (return-from find-cell cell)))))
+      (when (string= (name (column-header cell)) col-name) (return-from find-cell cell)))))
 
-#|
-(defmethod remove-column ((problem problem) (col column-header))
-  "Removes all the cells of the column from the rows they are part of.
-This does NOT remove col from the problem itsef.
-
-Returns `col'."
-  (declare (ignore problem))
-  (do-linked-list-not-first cell col next-row 
-    (remove-horizontally cell))
-  col)
-
-(defmethod remove-column ((problem problem) (col-name string))
-  (let ((col (find-column problem col-name)))
-    (when col (remove-column problem col))
-    col))
-
-(defun reinsert-column (problem col)
-  (declare (ignore problem))
-  (do-linked-list-not-first cell col next-row
-    (reinsert-horizontally cell))
-  col)
-|#
+(defun row (cell)
+  "Find a row for cell"
+  (do-linked-list-all x cell next-column
+    (when (typep x 'row-header) (return-from row x))))
 
 (defun reinsert-row (problem row)
   (declare (ignore problem))
@@ -357,6 +339,14 @@ still has all the links intact to the rows that are removed.
 
 
 (defun add-specified-row (problem row-name extra-data list-col-names)
+  "Add new row to problem.
+The row will be constructed with name `row-name' and the additional data of the row
+will be set to `extra-data'.  
+In addition `list-col-names' is a list of strings each of which indicate
+the column for which this row will have a cell.  If a column does not exist yet
+it will be created and added to the problem as well.
+
+Returns the new row."
   (let ((row (add-row problem row-name extra-data)))
     (loop for col-name in list-col-names
 	 do
@@ -370,6 +360,8 @@ still has all the links intact to the rows that are removed.
 	      (solution-printer nil))
   "Solves cover problem given by p.
 The optional keyword arguments modify search tree traversal behaviour.
+
+Returns a list of cells that describe the solution.
 "
   (let ((solution-so-far (list))
 	(solutions (list)))
@@ -397,9 +389,6 @@ The optional keyword arguments modify search tree traversal behaviour.
 		   (return-from cover-aux)))))
     (cover-aux))
     solutions))
-  
-;(defun cover (problem &optional (result-list (list)))
-;  (do-linked-list-not-first row-cell (next-column problem) next-row 
 
 (defun create-test-problem ()
   (let ((problem (make-instance 'problem)))
