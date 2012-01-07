@@ -4,52 +4,6 @@
 (in-package :puzzel)
 ;;;
 ;;; PUZZLE PIECES
-
-;;;   #####
-;;;
-;;;   ####       #
-;;;   #          ####
-;;;
-;;;   ####        #
-;;;    #         ####
-;;;
-;;;   #
-;;;   #
-;;;   ###
-;;;
-;;;    #
-;;;    #
-;;;   ###
-;;;
-;;;   ##      ###
-;;;   ###     ##
-;;;
-;;;
-;;;   # #
-;;;   ###
-;;;
-;;;   #         #
-;;;   ###     ###
-;;;    #       #
-;;;
-;;;  #         #
-;;;  ###     ###
-;;;    #     #
-;;;
-;;;    #
-;;;   ###
-;;;    #
-;;;
-;;;  #
-;;;  ##
-;;;   ##
-;;;
-;;; 11x5 == 55
-;;;
-;;; Total:  16  stukjes, 80 plaatsen in 8x10?
-;;;
-;;;
-;;;
 ;;; syntax:
 
 
@@ -205,7 +159,10 @@
 
 
 (defun add-piece (problem piece count)
-  (add-specified-row problem (format nil "~A~A" (name piece) count) piece (cons (name piece) (mapcar #'name (squares piece)))))
+  (add-specified-row problem 
+		     (format nil "~A~A" (name piece) count) 
+		     piece 
+		     (cons (name piece) (mapcar #'name (squares piece)))))
 
 
 (defmethod transform ((point point) (transform-matrix list))
@@ -307,13 +264,13 @@
 (defun get-type-b-char (x y pieces)
   (if (eq (piece-containing x y pieces)
 	  (piece-containing x (1- y) pieces))
-      #\IDEOGRAPHIC_SPACE
+#+nil      #\IDEOGRAPHIC_SPACE #\Space
       #\BOX_DRAWINGS_HEAVY_HORIZONTAL))
 
 (defun get-type-c-char (x y pieces)
   (if (eq (piece-containing x y pieces)
 	  (piece-containing (1- x) y pieces))
-      #\IDEOGRAPHIC_SPACE
+#+ni      #\IDEOGRAPHIC_SPACE #\Space
       #\BOX_DRAWINGS_HEAVY_VERTICAL))
 
 (defun get-type-a-char (x y pieces)
@@ -337,7 +294,7 @@
       ((and down left) #\BOX_DRAWINGS_HEAVY_DOWN_AND_LEFT)
       ((and down right) #\BOX_DRAWINGS_HEAVY_DOWN_AND_RIGHT)
       ((and left right) #\BOX_DRAWINGS_HEAVY_HORIZONTAL)
-      (t #\IDEOGRAPHIC_SPACE))))
+      (t #+nil #\IDEOGRAPHIC_SPACE #\Space))))
 
 
 (defun print-solution (vect)
@@ -359,7 +316,7 @@
 	    do
 	      (format t "~A~A"
 		      (get-type-c-char x y list-of-pieces)
-		      #\IDEOGRAPHIC_SPACE))
+		      #+nil #\IDEOGRAPHIC_SPACE #\Space))
 	 (format t "~%")
        ;; print left hand side of piece
 	 )))
@@ -441,19 +398,3 @@
 (setq Z-piece (create-piece-with-name "Z" "##" " #" " ##"))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;(defun create-test-2-puzzel ()
-;  (let ((puzzel (cover:create-problem))
-;	(board  (make-instance 'board :width :height)))
-
-;;
-;;
-;;            A N N A
-;;    ###    #   #
-;;    ###    ### #
-;;    ###    # ###
-;;    # #    #   #
-;;
-;;    12      12
-;; my piece is also highlighted

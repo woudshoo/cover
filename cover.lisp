@@ -20,11 +20,25 @@
 ;; Utility macros
 ;;
 (defmacro do-linked-list-not-first (loop-var start next-function &body body)
+  "Loop over elements in data indicated by `start' and execute `body'.
+The variable `loop-var' wil be bound to subsequent elements.
+The first element is fetched by the function `next-function' applied to `start' and
+subsequent elements are fetched by `next-function'.  The iteration 
+terminates if `next-function' returns `start'.  
+
+In other words, `start' is the first element of the list and `next-function'
+supplies the next element given the current element.  The list is supposed 
+to be circular and we stop when we are back to `start'.  As the name
+indicates, the first element is skipped."
   `(do ((,loop-var (,next-function ,start) (,next-function ,loop-var)))
        ((eq ,loop-var ,start) nil)
      ,@body))
 
 (defmacro do-linked-list-all (loop-var start next-function &body body)
+  "Bind `loop-var' to each element in the list starting with `start' and
+execute body for each element.  See for more details the 
+documentaiton of `do-linked-list-not-first'  but keep in mind this
+function will also process the first element `start'."
   `(progn 
      (let ((,loop-var ,start))
        ,@body)
@@ -84,18 +98,26 @@ The nr-rows property keep track of the number of rows intersecting this column."
   (setf (previous-row cell) cell)
   (setf (next-row cell) cell))
 
+
+;; Question, why is this a macro?  Can' this be function?
 (defmacro insert-after-double-linked-list (new-cell old-cell next-cell previous-cell)
-  "Insert new element in double linked list.
+  "Insert `new-cell' in a double linked list after `old-cell'.
+The double linked list structure is by the two functions `next-cell' and 
+`previous-cell' .  These two functions applied to `new-cell' and `old-cell' should
+evaluate to setf-able places.
+
+Returns `new-cell'.
+
+Example:
 Situation before:
                                              next-cell
       old cell <-------------------------------> other-cell
-                    previous-cell
+             previous-cell
 
 Situation after:
 
       old cell <--------> new-cell <--------> other cell
 
-Returns the new-cell
 "  
   `(progn 
      (setf (,next-cell ,new-cell) (,next-cell ,old-cell))
@@ -278,6 +300,7 @@ still has all the links intact to the rows that are removed.
 	(reinsert-horizontally cell)
 	(reinsert-row p cell))))
 
+;; performance critical
 (defun place-row (p row)
   (do-linked-list-not-first cell row next-column
     (unless (typep cell 'row-header)
@@ -286,7 +309,7 @@ still has all the links intact to the rows that are removed.
   (remove-row p row)
   row)
     
-
+;; performance critical
 (defun unplace-row (p row)
   (reinsert-row p row)
   (uncover-column p row)
@@ -295,13 +318,14 @@ still has all the links intact to the rows that are removed.
       (uncover-column p cell)))
   row)
 
-
+;; performance critical
 (defun cover-complete-p (p)
   (eq p (next-column p)))
 
 (defun first-available-column (p)
   (next-column p))
 
+;; By default performance critical
 (defun minimum-column-available (p)
   (let ((min 9999)
 	(result nil))
@@ -318,6 +342,8 @@ still has all the links intact to the rows that are removed.
   (eq p (next-row p)))
 
 (defun no-solution-possible-p (p)
+  "Quick check if there are no solutions possible for the current problem.
+Used to stop recursing."
   (when (no-rows-p p) (return-from no-solution-possible-p t))
   (do-linked-list-not-first col p next-column
     (when (= (nr-rows col) 0)
@@ -354,37 +380,35 @@ Returns the new row."
     row))
 
 
-(defun cover (p &optional &key
+(defun cover (problem &optional &key
 	      (column-selection #'minimum-column-available) 
 	      (max-nr-of-solutions 50)
-	      (solution-printer nil))
-  "Solves cover problem given by p.
+	      (solution-printer nil)
+	      (solution-so-far (list)))
+  "Solves cover problem given by `problem'
 The optional keyword arguments modify search tree traversal behaviour.
 
 Returns a list of cells that describe the solution.
 "
-  (let ((solution-so-far (list))
-	(solutions (list)))
-    (labels ((cover-aux () 
+  (let ((solutions (list)))
+    ;; performance critical
+    (labels ((cover-aux ()      
 	       "Runs the actual algorithm."
-	       (do-linked-list-not-first row-cell (funcall column-selection p) next-row
+	       (do-linked-list-not-first row-cell (funcall column-selection problem) next-row
 		 ;; Try row and add to partial solution
-		 (place-row p row-cell)
+		 (place-row problem row-cell)
 		 (push row-cell solution-so-far)
 		 ;; check the state solution sofar
 		 (cond
-		   ;; Found solution
-		   ((cover-complete-p p)         
-		    (push solution-so-far solutions)
+		   ((cover-complete-p problem)             ;; Found solution
+		    (push (mapcar #'row solution-so-far) solutions)
 		    (when solution-printer
-		      (funcall solution-printer solution-so-far)))
-		   ;; Dead end, do nothing
-		   ((no-solution-possible-p p))
-		   ;; normal case, go deeper in tree
-		   (t 
+		      (funcall solution-printer (first solutions))))
+		   ((no-solution-possible-p problem))	   ;; Dead end, do nothing
+		   (t                            	   ;; normal case, go deeper in tree
 		    (cover-aux)))
 		 ;; Restore situation
-		 (unplace-row p (pop solution-so-far))
+		 (unplace-row problem (pop solution-so-far))
 		 (when (>= (length solutions) max-nr-of-solutions)
 		   (return-from cover-aux)))))
     (cover-aux))

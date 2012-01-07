@@ -100,11 +100,17 @@
     (values sudoku filled-in-values)))
 		 
 	   
-	 
+(defun solve-suduko-from-line (line)
+  (multiple-value-bind (problem part-sol) (create-sudoku-from-line line)
+    (cover:cover problem :solution-printer #'(lambda (sol) (print-solution sol part-sol)))))
 
-0  1  2  3  4  5  6  7  8
-9 10 11 12 13 14 15 16 17
-...
+
+(defun solve-sudukos-from-file (file-name &key (count 10))
+  (with-open-file (s file-name)
+    (loop for lnr from 0 upto count
+       do
+	 (solve-suduko-from-line (read-line s)))))
+
 
 
 
