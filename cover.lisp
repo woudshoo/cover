@@ -2,21 +2,6 @@
 ;;;
 ;;;
 
-(defpackage #:cover
-  (:use #:cl)
-  (:export #:cover
-	   #:problem
-	   #:cell
-	   #:row
-	   #:extra-data
-	   #:add-row
-	   #:add-column
-	   #:add-cell
-	   #:create-problem
-	   #:add-specified-row
-	   #:print-problem
-	   #:create-test-problem))
-
 (in-package :cover)
 
 ;; 
@@ -266,10 +251,6 @@ the same argument `row'."
   (let ((row (find-row problem row-name)))
     (when row (remove-row problem row))
     row))
-
-(defun empty-problem ()
-  (let ((problem (make-instance 'problem)))
-    problem))
 
 (defun print-problem (p)
   (format t "     ")

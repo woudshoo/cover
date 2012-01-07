@@ -30,6 +30,12 @@
 (defgeneric upper-left (obj))
 (defgeneric reflect-around-origin (obj))
 (defgeneric move-to-origin (obj))
+(defgeneric max-x (obj))
+(defgeneric min-x (obj))
+(defgeneric max-y (obj))
+(defgeneric min-y (obj))
+
+(defgeneric contains-point (obj-a obj-b))
 
 (defmethod reflect-around-origin ((point point))
   (make-instance 'point :x (- (x point)) :y (- (y point))))
@@ -125,8 +131,6 @@
   (loop for p in (squares piece)
      when (contains-point p point) return t))
 
-
-
 (defun create-squares-from-strings (&rest rest)
   (loop 
      for row in rest 
@@ -143,11 +147,11 @@
 (defun print-piece-2 (piece)
   (print-piece piece)
   (let ((origin-piece (move-to-origin piece)))
-    (loop for y from 0 upto (height piece)
+    (loop for y from 0 upto (height origin-piece)
        do
-	 (loop for x from 0 upto (width piece)
+	 (loop for x from 0 upto (width origin-piece)
 	      do
-	      (format t (if (contains-point piece (list x y)) "#" " ")))
+	      (format t (if (contains-point origin-piece (list x y)) "#" " ")))
 	 (format t "~%"))))
 
 (defun create-piece-with-name (name &rest rest)
@@ -183,7 +187,7 @@
 (defun all-rotations-and-mirrors-for-piece (piece)
   (let ((pieces
 	 (mapcar #'(lambda (transform) (transform piece transform)) 
-		 '((1 0 0 1)  ;; identit
+		 '((1 0 0 1)  ;; identity
 		   (0 1 -1 0)  ;; rotation 90 clockwise
 		   (0 -1 1 0) ;; rotation 90 counter clockwise
 		   (-1 0 0 -1) ;; roation 180 degrees
@@ -230,20 +234,10 @@
 	      (incf count)
 	      (add-piece problem (translate origin-piece (list x y)) count)))))
 
-(setf u-piece
-      (create-piece-with-name "U"
-			      "#.#"
-			      "###"))
-(setf l-piece
-      (create-piece-with-name "L" "##" "#."))
-
-
-(setf p-piece
-      (create-piece-with-name "P" "#"))
 
 
 (defun pieces-from-solution (solution)
-  (mapcar (lambda (x) (cover::extra-data (cover::row x))) solution))
+  (mapcar (lambda (x) (cover:extra-data (cover:row x))) solution))
 
 (defun piece-containing (x y list-of-pieces)
   (find-if (lambda (piece) (contains-point piece (list x y))) list-of-pieces))
@@ -265,19 +259,30 @@
 ;;; and                                  cscscscsc
 ;;;
 ;;; 
+#+nil (defun get-type-b-char (x y pieces)
+  (if (eq (piece-containing x y pieces)
+	  (piece-containing x (1- y) pieces))
+      #\IDEOGRAPHIC_SPACE 
+      #\BOX_DRAWINGS_HEAVY_HORIZONTAL))
 (defun get-type-b-char (x y pieces)
   (if (eq (piece-containing x y pieces)
 	  (piece-containing x (1- y) pieces))
-#+nil      #\IDEOGRAPHIC_SPACE #\Space
-      #\BOX_DRAWINGS_HEAVY_HORIZONTAL))
+      " " 
+      "-"))
+
+#+nil (defun get-type-c-char (x y pieces)
+  (if (eq (piece-containing x y pieces)
+	  (piece-containing (1- x) y pieces))
+      #\IDEOGRAPHIC_SPACE 
+      #\BOX_DRAWINGS_HEAVY_VERTICAL))
 
 (defun get-type-c-char (x y pieces)
   (if (eq (piece-containing x y pieces)
 	  (piece-containing (1- x) y pieces))
-#+ni      #\IDEOGRAPHIC_SPACE #\Space
-      #\BOX_DRAWINGS_HEAVY_VERTICAL))
+      " " 
+      "|"))
 
-(defun get-type-a-char (x y pieces)
+#+nil (defun get-type-a-char (x y pieces)
   (let ((up (not (eq (piece-containing x (1- y) pieces)
 		     (piece-containing (1- x) (1- y) pieces))))
 	(down (not (eq (piece-containing x y pieces)
@@ -298,7 +303,30 @@
       ((and down left) #\BOX_DRAWINGS_HEAVY_DOWN_AND_LEFT)
       ((and down right) #\BOX_DRAWINGS_HEAVY_DOWN_AND_RIGHT)
       ((and left right) #\BOX_DRAWINGS_HEAVY_HORIZONTAL)
-      (t #+nil #\IDEOGRAPHIC_SPACE #\Space))))
+      (t  #\IDEOGRAPHIC_SPACE))))
+
+(defun get-type-a-char (x y pieces)
+  (let ((up (not (eq (piece-containing x (1- y) pieces)
+		     (piece-containing (1- x) (1- y) pieces))))
+	(down (not (eq (piece-containing x y pieces)
+		       (piece-containing (1- x) y pieces))))
+	(left (not (eq (piece-containing (1- x) (1- y) pieces)
+		       (piece-containing (1- x) y pieces))))
+	(right (not (eq (piece-containing x (1- y) pieces)
+			(piece-containing x y pieces)))))
+    (cond
+      ((and up down left right) "+")
+      ((and up down left) "+")
+      ((and up down right) "+")
+      ((and up left right) "+")
+      ((and down left right) "+")
+      ((and up down) "|")
+      ((and up left) "+")
+      ((and up right) "+")
+      ((and down left) "+")
+      ((and down right) "+")
+      ((and left right) "-")
+      (t  " "))))
 
 
 (defun print-solution (vect)
@@ -320,7 +348,7 @@
 	    do
 	      (format t "~A~A"
 		      (get-type-c-char x y list-of-pieces)
-		      #+nil #\IDEOGRAPHIC_SPACE #\Space))
+		       " "))
 	 (format t "~%")
        ;; print left hand side of piece
 	 )))
@@ -369,7 +397,7 @@
   (let ((puzzel (cover:create-problem))
 	(board (make-instance 'board :width length :height (/ 60 length))))
     (add-piece-for-board puzzel F-piece board)
-;    (add-piece-for-board puzzel I-piece board)
+;;    (add-piece-for-board puzzel I-piece board)
 ;; add I piece, not rotated and not bordering at side of board
     (loop for x from 0 upto (- (width board) (width I-piece))
 	 do
@@ -388,17 +416,5 @@
     (add-piece-for-board puzzel Z-piece board)
     puzzel))
 
-(setq F-piece (create-piece-with-name "F" " ##" "##" " #"))
-(setq I-piece (create-piece-with-name "I" "#####"))
-(setq L-piece (create-piece-with-name "L" "####" "#"))
-(setq N-piece (create-piece-with-name "N" " ###" "##"))
-(setq P-piece (create-piece-with-name "P" "###" "##"))
-(setq T-piece (create-piece-with-name "T" "###" " #" " #"))
-(setq U-piece (create-piece-with-name "U" "# #" "###"))
-(setq V-piece (create-piece-with-name "V" "###" "#" "#"))
-(setq W-piece (create-piece-with-name "W" "#" "##" " ##"))
-(setq X-piece (create-piece-with-name "X" " #" "###" " #"))
-(setq Y-piece (create-piece-with-name "Y" "#" "##" "#" "#"))
-(setq Z-piece (create-piece-with-name "Z" "##" " #" " ##"))
 
 

@@ -3,7 +3,8 @@
 ;;;
 
 (defpackage #:sudoku
-  (:use #:cl #:cover))
+  (:use #:cl #:cover)
+  (:export #:find-row))
 
 (in-package :sudoku)
 
@@ -41,7 +42,7 @@
 
 
 (defun set-value (sudoku value x y)
-  (cover::place-row sudoku (cover::next-column (cover::find-row sudoku (name-for-fow value x y)))))
+  (cover:place-row sudoku (cover:next-column (cover:find-row sudoku (name-for-fow value x y)))))
 
 
 (defun print-solution (solution &optional start-values)
@@ -49,7 +50,7 @@
 	 (stable-sort 
 	  (sort
 	   (append start-values
-		   (mapcar #'cover::extra-data solution))
+		   (mapcar #'cover:extra-data solution))
 	   #'<
 	   :key #'third)
 	  #'<

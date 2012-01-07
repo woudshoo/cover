@@ -1,0 +1,176 @@
+* Cover, a Common Lisp implementation of Dancing Links
+
+This is an implementation of the DLX (aka Dancing Links) algorithm popularized 
+in the paper http://www-cs-faculty.stanford.edu/~uno/papers/dancing-color.ps.gz
+by D.E. Knuth.   
+
+The implementation is not optimized for speed, it uses CLOS classes
+and generic methods for most of the low level manipulations so
+it can be improved a bit speedwise.
+
+However it is fast enough for my purposes.
+
+* Files
+
+The source code of the algorithm itself is contained in one file,
+cover.lisp.  
+
+In addition there are two example files,
+
+- sudoku.lisp, containing a classic 9x9 sudoku solver
+- puzzel.lisp, containing a solver for the tiling of pentominos
+
+Both of the examples are not documented very well.  
+
+** Sudoku example
+
+#+BEGIN_EXAMPLE
+(asdf:load-system "cover")
+(load "examples/sudoku")
+(in-package #:sudoku)
+(solve-suduko-from-line 
+    "000000012040050000000009000070600400000100000000000050000087500601000300200000000")
+#+END_EXAMPLE
+
+Here the sudoku is encoded as one line containing the 81 cells, with 0 presenting empty cells.
+
+This results in 
+#+BEGIN_EXAMPLE
+ -----------------------
+| 5 9 8 | 4 6 3 | 7 1 2 |
+| 7 4 2 | 8 5 1 | 6 3 9 |
+| 3 1 6 | 7 2 9 | 8 4 5 |
+ -----------------------
+| 1 7 5 | 6 3 2 | 4 9 8 |
+| 8 6 9 | 1 4 5 | 2 7 3 |
+| 4 2 3 | 9 7 8 | 1 5 6 |
+ -----------------------
+| 9 3 4 | 2 8 7 | 5 6 1 |
+| 6 8 1 | 5 9 4 | 3 2 7 |
+| 2 5 7 | 3 1 6 | 9 8 4 |
+ -----------------------
+((#<COVER::ROW-HEADER {10045E5501}> #<COVER::ROW-HEADER {1004682E61}>
+  #<COVER::ROW-HEADER {10046D34C1}> #<COVER::ROW-HEADER {100471B981}>
+  #<COVER::ROW-HEADER {1004730271}> #<COVER::ROW-HEADER {10047B7A91}>
+  #<COVER::ROW-HEADER {10047D2BB1}> #<COVER::ROW-HEADER {10047EA701}>
+  #<COVER::ROW-HEADER {10048084C1}> #<COVER::ROW-HEADER {10048204E1}>
+  #<COVER::ROW-HEADER {100483AF41}> #<COVER::ROW-HEADER {1004816CE1}>
+  #<COVER::ROW-HEADER {1004858BB1}> #<COVER::ROW-HEADER {1004868151}>
+  #<COVER::ROW-HEADER {10046E5811}> #<COVER::ROW-HEADER {1004697151}>
+  #<COVER::ROW-HEADER {1004849271}> #<COVER::ROW-HEADER {100484CF21}>
+  #<COVER::ROW-HEADER {100488E2A1}> #<COVER::ROW-HEADER {1004892041}>
+  #<COVER::ROW-HEADER {1004898A91}> #<COVER::ROW-HEADER {100479E061}>
+  #<COVER::ROW-HEADER {100477CBB1}> #<COVER::ROW-HEADER {1004646151}>
+  #<COVER::ROW-HEADER {100485BBB1}> #<COVER::ROW-HEADER {100468F811}>
+  #<COVER::ROW-HEADER {10046C9811}> #<COVER::ROW-HEADER {10047B2CE1}>
+  #<COVER::ROW-HEADER {1004776271}> #<COVER::ROW-HEADER {100478C041}>
+  #<COVER::ROW-HEADER {10046582A1}> #<COVER::ROW-HEADER {10046BE271}>
+  #<COVER::ROW-HEADER {10046A64C1}> #<COVER::ROW-HEADER {10046ABF21}>
+  #<COVER::ROW-HEADER {10048353A1}> #<COVER::ROW-HEADER {100474ABB1}>
+  #<COVER::ROW-HEADER {1004661981}> #<COVER::ROW-HEADER {1004610951}>
+  #<COVER::ROW-HEADER {100479C151}> #<COVER::ROW-HEADER {100460E931}>
+  #<COVER::ROW-HEADER {10046414C1}> #<COVER::ROW-HEADER {10045ED931}>
+  #<COVER::ROW-HEADER {10046A2811}> #<COVER::ROW-HEADER {10047F6F21}>
+  #<COVER::ROW-HEADER {100466B271}> #<COVER::ROW-HEADER {10046F4CA1}>
+  #<COVER::ROW-HEADER {10047DE2A1}> #<COVER::ROW-HEADER {100461D931}>
+  #<COVER::ROW-HEADER {10046535E1}> #<COVER::ROW-HEADER {10046E84C1}>
+  #<COVER::ROW-HEADER {1004700271}> #<COVER::ROW-HEADER {100471AA91}>
+  #<COVER::ROW-HEADER {1004871981}> #<COVER::ROW-HEADER {100487C151}>
+  #<COVER::ROW-HEADER {100473C931}> #<COVER::ROW-HEADER {100472C4C1}>
+  #<COVER::ROW-HEADER {1004814F21}> #<COVER::ROW-HEADER {10048024C1}>
+  #<COVER::ROW-HEADER {1004676811}> #<COVER::ROW-HEADER {10047AB3A1}>
+  #<COVER::ROW-HEADER {1004630931}> #<COVER::ROW-HEADER {100470C811}>
+  #<COVER::ROW-HEADER {1004762981}> #<COVER::ROW-HEADER {10047CFCE1}>))
+#+END_EXAMPLE
+
+** Puzzel example
+
+
+#+BEGIN_EXAMPLE
+(asdf:load-system "cover")
+(load "examples/puzzel")
+(in-package #:puzzel)
+(cover (create-pentomino-puzel 12) :solution-printer #'print-solution)
+#+END_EXAMPLE
+
+This generates all coverings of 5x12 rectangle by the pentomino pieces
+such that the I piece is horizontal and not bordering a long edge.
+
+The result is
+
+#+BEGIN_EXAMPLE
++---+-+-----+---+-+-----+ 
+|   | |     |   | |     | 
+| +-+ +-+ +-+ +-+ +---+ | 
+| |     | |   | |     | | 
+| +-+ +-+ | +-+ +---+ | | 
+|   | | | | |       | | | 
++---+-+ +-+-+-------+-+-+ 
+|   |   |   |         | | 
+|   +-+ +-+ +---+-----+ | 
+|     |   |     |       | 
++-----+---+-----+-------+ 
+                          
++-----+---+-----+-------+ 
+|     |   |     |       | 
+|   +-+ +-+ +---+-----+ | 
+|   |   |   |         | | 
++---+-+ +-+-+-------+-+-+ 
+|   | | | | |       | | | 
+| +-+ +-+ | +-+ +---+ | | 
+| |     | |   | |     | | 
+| +-+ +-+ +-+ +-+ +---+ | 
+|   | |     |   | |     | 
++---+-+-----+---+-+-----+ 
+                          
++-----+-+---+-----+-+---+ 
+|     | |   |     | |   | 
+| +---+ +-+ +-+ +-+ +-+ | 
+| |     | |   | |     | | 
+| | +---+ +-+ | +-+ +-+ | 
+| | |       | | | | |   | 
++-+-+-------+-+-+ +-+---+ 
+| |         |   |   |   | 
+| +-----+---+ +-+ +-+   | 
+|       |     |   |     | 
++-------+-----+---+-----+ 
+                          
++-------+-----+---+-----+ 
+|       |     |   |     | 
+| +-----+---+ +-+ +-+   | 
+| |         |   |   |   | 
++-+-+-------+-+-+ +-+---+ 
+| | |       | | | | |   | 
+| | +---+ +-+ | +-+ +-+ | 
+| |     | |   | |     | | 
+| +---+ +-+ +-+ +-+ +-+ | 
+|     | |   |     | |   | 
++-----+-+---+-----+-+---+ 
+                          
+((#<COVER::ROW-HEADER {1004CD59C1}> #<COVER::ROW-HEADER {1002BC5591}>
+  #<COVER::ROW-HEADER {1002B187D1}> #<COVER::ROW-HEADER {1004ECBCF1}>
+  #<COVER::ROW-HEADER {1004D430E1}> #<COVER::ROW-HEADER {1004E929C1}>
+  #<COVER::ROW-HEADER {1004C8B2B1}> #<COVER::ROW-HEADER {1004F081C1}>
+  #<COVER::ROW-HEADER {1004CB6591}> #<COVER::ROW-HEADER {1004ED8801}>
+  #<COVER::ROW-HEADER {1004CB2EC1}> #<COVER::ROW-HEADER {1004C74AC1}>)
+ (#<COVER::ROW-HEADER {1002C2C7D1}> #<COVER::ROW-HEADER {1004C95CC1}>
+  #<COVER::ROW-HEADER {1004C96B81}> #<COVER::ROW-HEADER {1004D39301}>
+  #<COVER::ROW-HEADER {1004F28DC1}> #<COVER::ROW-HEADER {1004EA76C1}>
+  #<COVER::ROW-HEADER {1004CAAF31}> #<COVER::ROW-HEADER {1004E9EE51}>
+  #<COVER::ROW-HEADER {1004CD5F71}> #<COVER::ROW-HEADER {1004F32D71}>
+  #<COVER::ROW-HEADER {1004C90201}> #<COVER::ROW-HEADER {1004CAFE81}>)
+ (#<COVER::ROW-HEADER {1002C54EC1}> #<COVER::ROW-HEADER {1004CE1BA1}>
+  #<COVER::ROW-HEADER {1004CAB6C1}> #<COVER::ROW-HEADER {1004E957B1}>
+  #<COVER::ROW-HEADER {1004F2ABE1}> #<COVER::ROW-HEADER {1004E98AF1}>
+  #<COVER::ROW-HEADER {1004CABE01}> #<COVER::ROW-HEADER {1004D42A71}>
+  #<COVER::ROW-HEADER {1004CD8601}> #<COVER::ROW-HEADER {1004F06B71}>
+  #<COVER::ROW-HEADER {1004C73E41}> #<COVER::ROW-HEADER {1004C43591}>)
+ (#<COVER::ROW-HEADER {1002BE5EC1}> #<COVER::ROW-HEADER {1004D12631}>
+  #<COVER::ROW-HEADER {1002B77591}> #<COVER::ROW-HEADER {1004EC8061}>
+  #<COVER::ROW-HEADER {1004E93951}> #<COVER::ROW-HEADER {1004E93541}>
+  #<COVER::ROW-HEADER {1004C8B781}> #<COVER::ROW-HEADER {1004E9E981}>
+  #<COVER::ROW-HEADER {1004CACF61}> #<COVER::ROW-HEADER {1004D49231}>
+  #<COVER::ROW-HEADER {1004CB1881}> #<COVER::ROW-HEADER {1004C282A1}>))
+
+#+END_EXAMPLE
+
