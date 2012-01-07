@@ -1,4 +1,7 @@
-; Package preamble
+;;; Copyright (c) 2007,2011 by Willem Rein Oudshoorn
+;;;
+;;;
+
 (defpackage #:cover
   (:use #:cl)
   (:export #:cover

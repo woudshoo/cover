@@ -1,3 +1,7 @@
+;;; Copyright (c) 2007,2011 by Willem Rein Oudshoorn
+;;;
+;;;
+
 (defpackage #:puzzel
   (:use #:cl #:cover))
 
