@@ -1,0 +1,137 @@
+* Nonogram 
+
+Nono grams are puzzles in which you are asked color the cells in a rectangular grid.
+For each row and each column the number of consecutive cells of a single color are given.
+
+So for example take the following grid
+
+#+BEGIN_EXAMPLE
+
+X..XXYY.Y
+Y..YXZ...
+Y.ZZZZ...
+
+#+END_EXAMPLE
+
+The following information is given for the rows and columns
+
+#+BEGIN_EXAMPLE
+
+Row 1:  (X . 1) (X . 2) (Y . 2) (Y . 1)
+Row 2:  (Y . 1) (Y . 1) (X . 1) (Z . 1)
+Row 3:  (Y . 1) (Z . 4)
+
+Col 1: (X . 1) (Y . 2)
+Col 2: nil
+Col 3: (Z . 1)
+Col 4: (X . 1) (Y . 1) (Z . 1)
+Col 5: (X . 2) (Z . 1)
+Col 6: (Y . 1) (Z . 2)
+Col 7: (Y . 1)
+Col 8: nil
+Col 9: (Y . 1)
+
+#+END_EXAMPLE
+
+This problem can be solved as a covering problem.  
+
+** Covering 
+
+The covering solver we have takes as input a matrix with 0 and 1s (conceptually)
+and tries to select a collection of rows S such that the sum of the rows in S
+is a vector containing only 1s.  That is, it selects a collection of rows
+coverint the columns.  
+
+
+** Translating the nonogram problem in a covering problem
+
+There are 2 types of rows and 3 types of columns.
+
+*** Columns:
+
+**** Columns indicating a column or row in the nonogram, 
+  These columns are named Col1, Col2, ... and Row1, Row2,...
+
+  The number of these type of columns is: #Rows + #Columns
+**** Columns indicating the cells
+  These columns are called C1,1, C1,2,...
+
+  The number of columns of this type is: #Rows * #Columns
+
+**** Columns indicating the color assigned to a cell.
+  These columns are a bit trickier, they have the following names:
+
+  C1,1-Colour1-Row
+  C1,1-Colour1-Col
+
+  where C1,1 indicates the cell
+  Colour1 indicated the colour, like white, black, red...
+  Row and Col are just suffixes.
+
+  The number of columns of these columns is: #Rows * #Columns * #Colours * 2
+
+**** Total
+
+     The total number of columns is: 
+
+     #Rows + #Columns + 3 * #Rows * #Columns * #Colours
+
+     The meaning of the columns become more clear with the description
+     of the rows
+
+*** Rows
+
+**** Rows from the nonogram puzzle
+
+     For each row and column we will generate all possible colourings
+     that are possible for the single row/column
+
+     If we look at Row1 a possible colouring is:
+
+     X.XX.YY.Y
+     
+     or
+     
+     X..XXYY.Y
+
+     We encode the first of these examples as follows
+
+| Row Name       | Row1 | Row2 | ... | Col1 | ... | C1,1-ColourX-Row | C1,2-ColourX-Row | C1,2-Colour.-Row | ... | C1,9-ColourY-Row |
+|----------------+------+------+-----+------+-----+------------------+------------------+------------------+-----+------------------|
+| Row1:X.XX.YY.Y |    1 |    0 |   0 |    0 |   0 |                1 |                0 |                1 | ... |                1 |
+     
+     It will have a '1' in column 'Row1' because it is a first row.
+     It will have a 1 in any C1,y-Colour?-Row where if the possible row
+     has on column y colour '?'.  All the other columns will have value '0'.
+
+     The nonogram description of the columns generate similar rows in the covering problem.
+
+**** Rows to make sure the colouring is complete and consistent
+
+     For each cell Cx,y and colour Colour? it will generate the following 
+
+| Row name     | C1,1 | ... | C2,3 | ... | C2,3-Colour.-Row | C2,3-Colour.-Col | C2,3-ColourX-Row | C2,3-ColourX-Col | C2,3-ColourY-Row | C2,3-ColourY-Col | C2,3-ColourY-Row | C2,3-ColourY-Col |
+|--------------+------+-----+------+-----+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------|
+| C2,3-ColourX |    0 |   0 |    1 |   0 |                1 |                1 |                0 |                0 |                1 |                1 | 1                | 1                |
+
+     It has a 1 in the following places:
+     - The cell it is associated to
+     - All colours != X (the assigned colour) for the C?,?-Colour?-? columns
+       for the cell for this row.
+
+**** What are the constraints implied by the covering
+
+     The fact that each Col or Row column needs exactly one '1' means
+     that there need to be a unique row in the problem corresponding
+     to a unique possible filling of that row/column for the given hints.
+
+     The fact that each C?,? column needs a 1 means that there is a unique colour
+     choosen for the cell, by means of selecting a 'Cx,y-ColourX' row
+     
+     Now the fact that the Cx,y-Colour?-Row|Col columns need exactly one 1
+     imply that the rows selected for 'Col' and 'Row' of the puzzle
+     have that exact colour at the Cx,y cell.
+
+     So a covering solves our problem.
+     Conversely a solution will produce a covering.
+

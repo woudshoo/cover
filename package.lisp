@@ -25,4 +25,5 @@
 	   #:previous-row
 	   #:column-header
 	   #:find-row
-	   #:remove-row))
+	   #:remove-row
+	   #:find-or-insert-column))

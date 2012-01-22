@@ -9,19 +9,26 @@
 ;;;
 ;;; PUZZLE PIECES
 ;;; syntax:
+;;;
+;;;
 
 
 (defclass board ()
   ((width :accessor width :initarg :width)
-   (height :accessor height :initarg :height)))
+   (height :accessor height :initarg :height))
+  :documentation "Represents the board on which the puzzle
+pieces need to be put.  For this example it is just
+a rectangle.")
 
 (defclass point ()
   ((x :accessor x :initarg :x)
-   (y :accessor y :initarg :y)))
+   (y :accessor y :initarg :y))
+  :documentation "A location in the grid.")
 
 (defclass piece ()
   ((name :accessor name :initarg :name)
-   (squares :accessor squares :initarg :squares)))
+   (squares :accessor squares :initarg :squares))
+  :documentation "A puzzle piece, consisting of a list of squares.")
 
 (defgeneric name (obj))
 (defgeneric width (obj))
@@ -88,12 +95,14 @@
 
 
 (defmethod width ((piece piece))
+  "The width of a puzzle piece"
   (loop for point in (squares piece)
        maximize (x point) into max-x
        minimize (x point) into min-x
        finally (return (1+ (- max-x min-x)))))
 
 (defmethod height ((piece piece))
+  "The height of a puzzle piece"
   (loop for point in (squares piece)
      maximize (y point) into max-y
      minimize (y point) into min-y
